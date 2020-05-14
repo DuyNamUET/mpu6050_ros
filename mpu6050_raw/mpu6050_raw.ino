@@ -10,9 +10,7 @@ Connect MPU6050 with Arduino Uno
 
 // ROS library
 #include "ros.h"
-#include "ros/time.h"
-#include "tf/transform_broadcaster.h"
-#include "sensor_msgs/Imu.h"
+#include "geometry_msgs/Vector3.h"
 
 // MPU6050 independence library
 #include "I2Cdev.h"
@@ -21,62 +19,36 @@ Connect MPU6050 with Arduino Uno
 
 // ROS initialize
 ros::NodeHandle nh;
-geometry_msgs::TransformStamped t;
-tf::TransformBroadcaster br;
-sensor_msgs::Imu imu_data;
-
-ros::Publisher imu_pub("/imu_data", &imu_data);
-
-char base_link[] = "/base_link";
-char imu[] = "/imu";
+geometry_msgs::Vector3 accel_raw_data;
+geometry_msgs::Vector3 gyro_raw_data;
+ros::Publisher accelpub("/accel_raw", &accel_raw_data);
+ros::Publisher gyropub("/gyro_raw", &gyro_raw_data);
 
 MPU6050 accelgyro;
 
 int16_t ax, ay, az;
-int16_t vx, vy, vz;
-
+int16_t gx, gy, gz;
+ 
 #define LED_PIN 13
-#define PI 3.14159265
 bool blinkState = false;
-
-void processLinearAccelData()
-{
-    ax /= 16384.0;
-    ay /= 16384.0;
-    az /= 16384.0;
-}
-
-void processAngularVelData()
-{
-    vx = vx/131.0*PI/180.0;
-    vy = vy/131.0*PI/180.0;
-    vz = vz/131.0*PI/180.0;
-}
 
 void setup()
 {
     // ROS setup
     nh.initNode();
-    br.init(nh);
-    nh.advertise(imu_pub);
+    nh.advertise(accelpub);
+    nh.advertise(gyropub);
 
     Wire.begin();
     Serial.begin(38400);
 
     // initialize device
     Serial.println("Initializing I2C devices...");
-    ROS_INFO("Initializing I2C devices...");
     accelgyro.initialize();
 
     // verify connection
     Serial.println("Testing device connections...");
-    ROS_INFO("Testing device connections...");
     Serial.println(accelgyro.testConnection() ? "MPU6050 connection successful" : "MPU6050 connection failed");
-    if (accelgyro.testConnection())
-    {
-        ROS_INFO("MPU6050 connection successful");
-    }
-    else ROS_INFO("MPU6050 connection failed");
 
     // configure Arduino LED for
     pinMode(LED_PIN, OUTPUT);
@@ -85,32 +57,32 @@ void setup()
 void loop()
 {
     // read raw accel/gyro measurements from device
-    accelgyro.getMotion6(&ax, &ay, &az, &vx, &vy, &vz);
-    processLinearAccelData();
-    processAngularVelData();
+    accelgyro.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
 
     // print data on Serial monitor
-    Serial.print("Linear Acceleration:\n");
+    Serial.print("Data: ");
     Serial.print(ax); Serial.print("\t");
     Serial.print(ay); Serial.print("\t");
-    Serial.println(az);
-    Serial.print("Angular Velocity:\n");
-    Serial.print(vx); Serial.print("\t");
-    Serial.print(vy); Serial.print("\t");
-    Serial.println(vz);
+    Serial.print(az); Serial.print("\t");
+    Serial.print(gx); Serial.print("\t");
+    Serial.print(gy); Serial.print("\t");
+    Serial.println(gz);
 
-    // publish
-    imu_pub.publish(&imu_data);
+    // get data to publish
+    accel_raw_data.x = ax;
+    accel_raw_data.y = ay;
+    accel_raw_data.z = az;
+
+    gyro_raw_data.x = gx;
+    gyro_raw_data.y = gy;
+    gyro_raw_data.z = gz;
+
+    accelpub.publish(&accel_raw_data);
+    gyropub.publish(&gyro_raw_data);
+
 
     // blink LED to indicate activity
     blinkState = !blinkState;
     digitalWrite(LED_PIN, blinkState);
-    
-    t.header.frame_id = base_link;
-    t.header.stamp = nh.now();
-    t.child_frame_id = imu;
-    
-    
-
     delay(10);
 }

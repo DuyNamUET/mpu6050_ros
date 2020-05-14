@@ -50,6 +50,14 @@ void setup()
     Serial.println("Testing device connections...");
     Serial.println(accelgyro.testConnection() ? "MPU6050 connection successful" : "MPU6050 connection failed");
 
+    // supply your own gyro offsets here, scaled for min sensitivity
+    accelgyro.setXAccelOffset(-1169);
+    accelgyro.setYAccelOffset(744);
+    accelgyro.setZAccelOffset(1620);
+    accelgyro.setXGyroOffset(48);
+    accelgyro.setYGyroOffset(47);
+    accelgyro.setZGyroOffset(-8);
+
     // configure Arduino LED for
     pinMode(LED_PIN, OUTPUT);
 }

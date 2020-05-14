@@ -2,8 +2,6 @@
 #include <geometry_msgs/Vector3.h>
 #include <sensor_msgs/Imu.h>
 
-#define M_PI 3.14159265
-
 geometry_msgs::Vector3 accel_raw_data;
 geometry_msgs::Vector3 gyro_raw_data;
 
@@ -34,14 +32,14 @@ int main(int argc, char** argv)
     while(ros::ok())
     {
         // calculate rotational velocities in rad/s
-        double gxf = gyro_raw_data.x * (4000.0/65536.0) * (M_PI/180.0) * 25.0;
-        double gyf = gyro_raw_data.y * (4000.0/65536.0) * (M_PI/180.0) * 25.0;
-        double gzf = gyro_raw_data.z * (4000.0/65536.0) * (M_PI/180.0) * 25.0;
+        double gxf = gyro_raw_data.x / 131.0;
+        double gyf = gyro_raw_data.y / 131.0;
+        double gzf = gyro_raw_data.z / 131.0;
 
         // calculate accelerations in m/s²
-        double axf = accel_raw_data.x * (8.0 / 65536.0) * 9.81;
-        double ayf = accel_raw_data.y * (8.0 / 65536.0) * 9.81;
-        double azf = accel_raw_data.z * (8.0 / 65536.0) * 9.81;
+        double axf = accel_raw_data.x / 16384.0;
+        double ayf = accel_raw_data.y / 16384.0;
+        double azf = accel_raw_data.z / 16384.0;
         ros::spinOnce();
         r.sleep();
     }
